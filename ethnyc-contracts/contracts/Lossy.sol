@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 
-contract Greeter {
+contract Lossy {
     string private greeting;
 
     constructor(string memory _greeting) {
