@@ -18,7 +18,7 @@ import {CFAv1Library} from "@superfluid-finance/ethereum-contracts/contracts/app
 contract Lossy {
 
         address public owner;
-	address public owner;
+	mapping (address => bool) public accountList;
 
     	using CFAv1Library for CFAv1Library.InitData;
     	CFAv1Library.InitData public cfaV1; //initialize cfaV1 variable
@@ -43,17 +43,17 @@ contract Lossy {
     }
 
     function createFlowIntoContract(ISuperfluidToken token, int96 flowRate) external {
-
+	require(msg.sender == owner || accountList[msg.sender] == true, "must be authorized");
         cfaV1.createFlowByOperator(msg.sender, address(this), token, flowRate);
     }
 
     function updateFlowIntoContract(ISuperfluidToken token, int96 newFlowRate) external {
-
+	require(msg.sender == owner || accountList[msg.sender] == true, "must be authorized");
         cfaV1.updateFlowByOperator(msg.sender, address(this), token, newFlowRate);
     }
 
     function deleteFlowIntoContract(ISuperfluidToken token) external {
-
+	require(msg.sender == owner || accountList[msg.sender] == true, "must be authorized");
         cfaV1.deleteFlow(msg.sender, address(this), token);
     }
 }
