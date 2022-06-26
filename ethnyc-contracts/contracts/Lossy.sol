@@ -26,11 +26,6 @@ contract Lossy {
     //address getting the funds if wallet owner does not check in
     address payable public recipient;
 
-    enum DispersementPlan { SHORT, MEDIUM, LONG } 
-
-    DispersementPlan plan;
-
-
 
     constructor(uint256 _frequency, address payable _recipient) {
         //everything is public for demo purposes
@@ -46,13 +41,12 @@ contract Lossy {
     }
 
 
-    function setPlan(DispersementPlan planType) public {
+    function setPlan(string memory planType) public {
 
-        plan = planType;
-        if (planType == DispersementPlan.SHORT) {
+        if (keccak256(abi.encodePacked((planType))) == keccak256(abi.encodePacked(("SHORT")))) {
             rate = 8;
             frequency = 2;
-        } else if (planType == DispersementPlan.MEDIUM) {
+        } else if (keccak256(abi.encodePacked((planType))) == keccak256(abi.encodePacked(("MEDIUM")))) {
             rate = 4;
             frequency = 4;
         } else {
