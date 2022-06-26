@@ -44,7 +44,7 @@ async function main() {
   //Get contract to deploy & deploy
 
   const Lossy = await hre.ethers.getContractFactory("Lossy");
-  const lossy = await Lossy.deploy(2,10,recipient.address);
+  const lossy = await Lossy.deploy(1,recipient.address);
   await lossy.deployed();
 
   console.log("Lossy deployed to ", lossy.address)
@@ -67,19 +67,20 @@ async function main() {
   const frequency = await lossy.frequency();
   console.log("Freq",frequency);
 
-
   const lastCheckIn = await lossy.lastCheckIn();
   console.log("Last checked in:", lastCheckIn)
 
-  const hasCheckedIn = await lossy.
+  await printBalances(addresses);
 
+  setTimeout(function(){
+    console.log("I am the third log after 4 seconds");
+  },5000);
 
-
-
-
-  // console.log("====");
-  // const memos = await buyMeACoffee.getMemos();
-  // printMemos(memos);
+  console.log("===After check in===")
+  
+  let hasCheckedIn = await lossy.userCheckedin();
+  await printBalances(addresses);
+  
 }
 
 

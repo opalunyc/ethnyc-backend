@@ -90,6 +90,8 @@ contract Lossy {
             recipient.transfer(amount);
             return false;
         }
+
+
  
     }
 }
