@@ -1,59 +1,95 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
 
-import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import './IERC20.sol';
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+// import { ISuperfluid }from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol"; //"@superfluid-finance/ethereum-monorepo/packages/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
 
-import { ISuperfluid, ISuperToken, ISuperApp } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
+// import { IConstantFlowAgreementV1 } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/IConstantFlowAgreementV1.sol";
 
-import { ISuperfluidToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluidToken.sol";
+// import { IInstantDistributionAgreementV1 } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/IInstantDistributionAgreementV1.sol";
 
-import {IConstantFlowAgreementV1} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/IConstantFlowAgreementV1.sol";
-
-import {CFAv1Library} from "@superfluid-finance/ethereum-contracts/contracts/apps/CFAv1Library.sol";
 
 contract Lossy {
 
-        address public owner;
-	mapping (address => bool) public accountList;
 
-    	using CFAv1Library for CFAv1Library.InitData;
-    	CFAv1Library.InitData public cfaV1; //initialize cfaV1 variable
-	
-	constructor(ISuperfluid host, address _owner) {
+    uint256 public rate;
+    // The rate of increase
+    uint256 public increaseRate;
+    //The frequency of check-ins in seconds. How often a user needs to check in
+    uint256 public frequency;
+    //The date that the contract is initialized
+    uint256 public startDate;
+    // The last check in by the user 
+    uint256 public lastCheckIn;
+    //address getting the funds if wallet owner does not check in
+    address payable public recipient;
 
-        assert(address(host) != address(0));
-        console.log("Deploying a Money Router with owner:", owner);
-        owner = _owner;
+    enum DispersementPlan { SHORT, MEDIUM, LONG } 
 
-        //initialize InitData struct, and set equal to cfaV1        
-        cfaV1 = CFAv1Library.InitData(
-        host,
-        //here, we are deriving the address of the CFA using the host contract
-        IConstantFlowAgreementV1(
-            address(host.getAgreementClass(
-                    keccak256("org.superfluid-finance.agreements.ConstantFlowAgreement.v1")
-                ))
-            )
-        );
-	
+    DispersementPlan plan;
+
+
+
+    constructor(uint256 _frequency, address payable _recipient) {
+        //everything is public for demo purposes
+
+        frequency = _frequency;
+
+        startDate = block.timestamp;
+
+        lastCheckIn = block.timestamp;
+
+        recipient = _recipient;
+
     }
 
-    function createFlowIntoContract(ISuperfluidToken token, int96 flowRate) external {
-	require(msg.sender == owner || accountList[msg.sender] == true, "must be authorized");
-        cfaV1.createFlowByOperator(msg.sender, address(this), token, flowRate);
+
+    function setPlan(DispersementPlan planType) public {
+
+        plan = planType;
+        if (planType == DispersementPlan.SHORT) {
+            rate = 8;
+            frequency = 2;
+        } else if (planType == DispersementPlan.MEDIUM) {
+            rate = 4;
+            frequency = 4;
+        } else {
+            rate = 2;
+            frequency = 8;
+        }
+
     }
 
-    function updateFlowIntoContract(ISuperfluidToken token, int96 newFlowRate) external {
-	require(msg.sender == owner || accountList[msg.sender] == true, "must be authorized");
-        cfaV1.updateFlowByOperator(msg.sender, address(this), token, newFlowRate);
+    function setFrequency(uint _freq) public {
+        frequency = _freq;
     }
 
-    function deleteFlowIntoContract(ISuperfluidToken token) external {
-	require(msg.sender == owner || accountList[msg.sender] == true, "must be authorized");
-        cfaV1.deleteFlow(msg.sender, address(this), token);
+    function setRecipient(address payable _recipient) public {
+        recipient = _recipient;
+    }
+
+
+    function checkIn() public {
+        lastCheckIn = block.timestamp;
+    }
+
+    // function will be run all the time 
+    function userCheckedin() public returns (bool) {
+        uint256 nextCheckIn = lastCheckIn + frequency;
+    
+        if (nextCheckIn > block.timestamp) {
+            //case if checkin is not missed
+            lastCheckIn = block.timestamp;
+            return true;
+        } else {
+            //case if checkin is missed
+            uint currentBalance = address(this).balance;
+            uint256 amount = (currentBalance * rate)/100;
+            recipient.transfer(amount);
+            return false;
+        }
+ 
     }
 }
